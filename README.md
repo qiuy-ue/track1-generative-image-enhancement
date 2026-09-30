@@ -1,9 +1,20 @@
 # 清晰有度，增强可控
 
-**2026 CSIG「Camera学术之星」影像算法技术竞赛 · 赛道一：生成式图像增强可控性挑战 · 决赛方案**
+**简体中文** | [English](README.en.md)
 
-> 基于 **FreqOrtho-SR + TADSR** 的两级生成式增强方案 —— 先恢复结构，再补足细节，最后用可解释的规则完成筛选。
-> **全流程在单卡 A100 40GB 上完成。**
+![Competition](https://img.shields.io/badge/2026_CSIG_Camera学术之星-赛道一-2563EB)
+![Stage](https://img.shields.io/badge/阶段-决赛方案-7C3AED)
+![Score](https://img.shields.io/badge/初赛官方记录-4.0003-16A34A)
+![Architecture](https://img.shields.io/badge/架构-Diffusion-DB2777)
+![Resolution](https://img.shields.io/badge/输入-4K_(4096×3072)-EA580C)
+![Hardware](https://img.shields.io/badge/全流程-单卡_A100_40GB-0891B2)
+
+> [!IMPORTANT]
+> **一句话**：基于 **FreqOrtho-SR + TADSR** 的两级生成式增强 —— FreqOrtho-SR 在四分之一分辨率守住像素结构（FreqMoE 频率路由 + OGP 正交梯度投影），TADSR 时间感知一步扩散把细节落回原生 4K，最后用可解释的加权规则完成候选筛选。**初赛官方记录 4.0003**（100/100 张 4K 结果严格命名封装，附 SHA-256），**全流程单卡 A100 40GB**。
+>
+> **看什么**：[方案总览](#方案总览)（两张架构图）· [五类挑战场景结果证据](#可控性如何落到五类挑战) · [端到端工程闭环](#端到端工程闭环)
+>
+> **怎么跑**：验证集（5 组 LQ/GT）与测试集（case1…case100，4K）随仓库分发，可直接查阅与复测；完整推理工程包（RUNBOOK、脚本、scene_4k.json、结果包）在主工作区维护，待归档至本仓库。
 
 ---
 
@@ -98,7 +109,8 @@ TADSR 的作用不是重新发明内容，而是**把粗恢复结果细化到更
 
 ```
 .
-├── README.md                    # 本文档
+├── README.md                    # 本文档（简体中文）
+├── README.en.md                 # English version
 ├── 赛题介绍.md                   # 赛题规则原文整理
 ├── requirements.txt
 ├── data/
