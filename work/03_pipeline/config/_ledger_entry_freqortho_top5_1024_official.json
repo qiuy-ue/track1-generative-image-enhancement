@@ -1,0 +1,8 @@
+{
+  "id": "freqortho_teacher_top5_1024_on_opt7_20260920",
+  "official": 4.0003,
+  "official_pending": false,
+  "submission_status": "OFFICIAL_MEASURED_20260920",
+  "status": "OFFICIAL_MEASURED",
+  "verdict": "OFFICIAL 4.0003 (+0.0001 vs opt7 4.0002). The mechanism is neutral at the hidden evaluator despite a positive 1024px calibrated prediction. Do not burn further submissions on additional FreqOrtho gating variants; this branch is exhausted."
+}
