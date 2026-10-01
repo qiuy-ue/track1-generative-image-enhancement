@@ -6,7 +6,8 @@
 ![Stage](https://img.shields.io/badge/Stage-Finals_Presentation-7C3AED)
 ![Score](https://img.shields.io/badge/Prelim_Official_Record-4.0003-16A34A)
 ![Architecture](https://img.shields.io/badge/Architecture-Diffusion-DB2777)
-![Resolution](https://img.shields.io/badge/Input-4K_(4096×3072)-EA580C)
+![Python](https://img.shields.io/badge/Python-3.10-3776AB)
+![PyTorch](https://img.shields.io/badge/PyTorch-2.9_/_2.0-EE4C2C)
 ![Hardware](https://img.shields.io/badge/End_to_end-Single_A100_40GB-0891B2)
 
 > [!IMPORTANT]
@@ -14,7 +15,7 @@
 >
 > **Where to look**: [Overview](#solution-overview) (two architecture diagrams) · [Evidence on five challenge scenarios](#how-controllability-lands-on-the-five-challenge-scenarios) · [End-to-end engineering loop](#end-to-end-engineering-loop)
 >
-> **How to run**: the validation set (5 LQ/GT pairs) and the test set (case1…case100, 4K) ship with this repository for direct inspection and re-evaluation; the full inference toolkit (RUNBOOK, scripts, scene_4k.json, result package) lives in the primary workspace and will be archived here.
+> **How to run**: the full reproduction kit is archived in this repository under [`work/`](work/) — source, weights, inference scripts, pinned dual environments, and the official result package. The five-step reproduction lives in [work/RUNBOOK.md](work/RUNBOOK.md); environment reconstruction in [work/04_environment/ENVIRONMENT.md](work/04_environment/ENVIRONMENT.md). Only the two large base models (TADSR base and SD2.1-base) are not bundled — download notes in [work/00_README.md](work/00_README.md).
 
 ---
 
@@ -77,7 +78,40 @@ TADSR does not reinvent content — it **refines the coarsely restored result on
 | Compare | Candidate selection: `utility = 1.10286 × d_nr4 + 0.21747 × d_edge` |
 | Package | Uniformly named output `output_dir/case1.jpg … case100.jpg` |
 
-The selection weights come from a full-100 teacher-vs-candidate comparison experiment (`freq_teacher_vs_plus3_full100_1024.json`) — an **interpretable, auditable** rule rather than a black-box score.
+The selection weights come from a full-100 teacher-vs-candidate comparison experiment (`work/03_pipeline/config/freq_teacher_vs_plus3_full100_1024.json`) — an **interpretable, auditable** rule rather than a black-box score.
+
+## Reproduction (work/)
+
+The full reproduction kit is archived in this repository; directories mirror the original numbered bundles:
+
+| Directory | Contents |
+|-----------|----------|
+| `work/01_freqortho_sr/` | Complete FreqOrtho-SR source + `freqortho_sr.pkl` weights (57.7MB) |
+| `work/02_tadsr/` | TADSR source + LoRA weights (`tadsr_imag2006_a15.pkl` etc.) |
+| `work/03_pipeline/` | Inference / comparison / selection / packaging scripts + config (`scene_4k.json` etc.) |
+| `work/04_environment/` | Dual-environment dependency manifests (Conda + pip, incl. base-model download notes) |
+| `work/05_official_package/` | Official 4.0003 submission package: `output_dir/case1.jpg … case100.jpg` |
+| `work/06_defense/` | Defense materials |
+
+**Five-step reproduction** (details in [work/RUNBOOK.md](work/RUNBOOK.md)):
+
+1. Generate quarter-resolution inputs — `pipeline/prep_freqortho_full100.py`
+2. Patch and run FreqOrtho-SR one-step inference (`--process_size 512 --upscale 4`)
+3. TADSR teacher refinement back to native 4K — t=500 for ordinary cases, t=800 for complex cases in `scene_4k.json`; teacher Gaussian blur r=3.0 + ADain color correction
+4. Candidate selection `utility = 1.10286 × d_nr4 + 0.21747 × d_edge` — official top-5: **44 / 60 / 97 / 79 / 51**
+5. Rebuild the submission package — only the 5 selected entries are replaced; the other 95 remain byte-identical to the opt7 4.0002 baseline
+
+**Environments** (two separate environments, pinned versions, see [work/04_environment/ENVIRONMENT.md](work/04_environment/ENVIRONMENT.md)):
+
+| | FreqOrtho-SR | TADSR |
+|---|---|---|
+| Python | 3.10 | 3.10 |
+| Torch / torchvision | 2.9.1 / 0.24.1 | 2.0.1 |
+| transformers | 4.37.2 | 4.28.1 |
+| diffusers | 0.25.0 | 0.25.0 |
+| Others | xformers 0.0.33.post2 | xformers 0.0.20, peft 0.9.0 |
+
+> Official package SHA-256: `8e24ea7a06dddeb7ab92322ee48bf4245d05023d9bb6ed629d81e791196d1a35` (matches the record in [work/SOURCE_FILES.md](work/SOURCE_FILES.md), re-verified by hash).
 
 ## How Controllability Lands on the Five Challenge Scenarios
 
@@ -111,7 +145,7 @@ Result-image evidence from the official package (case attribution verified again
 
 ```
 .
-├── README.md                    # this document (Simplified Chinese)
+├── README.md                    # this document's Chinese original
 ├── README.en.md                 # English version
 ├── 赛题介绍.md                   # original competition brief (Chinese)
 ├── requirements.txt
@@ -119,10 +153,20 @@ Result-image evidence from the official package (case attribution verified again
 │   ├── 测试集/                  # case1 … case100 (4K inputs)
 │   └── 验证集/                  # 5 aligned LQ/GT pairs
 ├── assets/                      # figures used by this document
-└── 杂/初次.md                    # pre-competition analysis & battle plan
+├── work/                        # full reproduction kit (source / weights / scripts / env / official results)
+│   ├── 00_README.md             # bundle index
+│   ├── RUNBOOK.md               # five-step 4.0003 reproduction runbook
+│   ├── SOURCE_FILES.md          # provenance declaration of original files
+│   ├── 01_freqortho_sr/         # FreqOrtho-SR source + weights
+│   ├── 02_tadsr/                # TADSR source + LoRA weights
+│   ├── 03_pipeline/             # inference scripts & config
+│   ├── 04_environment/          # environment manifests
+│   ├── 05_official_package/     # official 4.0003 result package (100 images)
+│   └── 06_defense/              # defense materials
+└── 杂/                           # pre-competition notes & original zip bundles (zips not tracked)
 ```
 
-> Note: the full engineering kit (RUNBOOK, inference scripts, scene_4k.json, full-100 comparison ledger, official result package with SHA256SUMS) is maintained in the primary workspace and will be archived into this repository.
+> Official result package SHA-256: `8e24ea7a06dddeb7ab92322ee48bf4245d05023d9bb6ed629d81e791196d1a35` (matches the record in [work/SOURCE_FILES.md](work/SOURCE_FILES.md); re-verified by hash on this machine).
 
 ## Acknowledgements & Declaration
 

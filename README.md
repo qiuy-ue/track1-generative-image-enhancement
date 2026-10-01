@@ -6,7 +6,8 @@
 ![Stage](https://img.shields.io/badge/阶段-决赛方案-7C3AED)
 ![Score](https://img.shields.io/badge/初赛官方记录-4.0003-16A34A)
 ![Architecture](https://img.shields.io/badge/架构-Diffusion-DB2777)
-![Resolution](https://img.shields.io/badge/输入-4K_(4096×3072)-EA580C)
+![Python](https://img.shields.io/badge/Python-3.10-3776AB)
+![PyTorch](https://img.shields.io/badge/PyTorch-2.9_/_2.0-EE4C2C)
 ![Hardware](https://img.shields.io/badge/全流程-单卡_A100_40GB-0891B2)
 
 > [!IMPORTANT]
@@ -14,7 +15,7 @@
 >
 > **看什么**：[方案总览](#方案总览)（两张架构图）· [五类挑战场景结果证据](#可控性如何落到五类挑战) · [端到端工程闭环](#端到端工程闭环)
 >
-> **怎么跑**：验证集（5 组 LQ/GT）与测试集（case1…case100，4K）随仓库分发，可直接查阅与复测；完整推理工程包（RUNBOOK、脚本、scene_4k.json、结果包）在主工作区维护，待归档至本仓库。
+> **怎么跑**：完整复现套件已随仓库归档于 [`work/`](work/) —— 源码、权重、推理脚本、双环境依赖与官方结果包齐备，五步复现见 [work/RUNBOOK.md](work/RUNBOOK.md)，环境重建见 [work/04_environment/ENVIRONMENT.md](work/04_environment/ENVIRONMENT.md)。仅 TADSR base 与 SD2.1-base 两个大底模不随库分发，下载说明见 [work/00_README.md](work/00_README.md)。
 
 ---
 
@@ -75,7 +76,40 @@ TADSR 的作用不是重新发明内容，而是**把粗恢复结果细化到更
 | 比较 | 候选筛选：`utility = 1.10286 × d_nr4 + 0.21747 × d_edge` |
 | 封装 | 统一命名输出 `output_dir/case1.jpg … case100.jpg` |
 
-筛选权重来自全量 100 张的 teacher-vs-候选对比实验（`freq_teacher_vs_plus3_full100_1024.json`），是一条**可解释、可复核**的规则，而不是黑盒打分。
+筛选权重来自全量 100 张的 teacher-vs-候选对比实验（`work/03_pipeline/config/freq_teacher_vs_plus3_full100_1024.json`），是一条**可解释、可复核**的规则，而不是黑盒打分。
+
+## 复现（work/）
+
+完整复现套件已随仓库归档，目录对应原编号分包：
+
+| 目录 | 内容 |
+|------|------|
+| `work/01_freqortho_sr/` | FreqOrtho-SR 完整源码 + `freqortho_sr.pkl` 权重（57.7MB） |
+| `work/02_tadsr/` | TADSR 源码 + LoRA 权重（`tadsr_imag2006_a15.pkl` 等） |
+| `work/03_pipeline/` | 推理 / 比较 / 筛选 / 封装脚本与 config（`scene_4k.json` 等） |
+| `work/04_environment/` | 双环境依赖清单（Conda + pip，含底模下载说明） |
+| `work/05_official_package/` | 官方 4.0003 提交包：`output_dir/case1.jpg … case100.jpg` |
+| `work/06_defense/` | 答辩用素材 |
+
+**五步复现**（细节见 [work/RUNBOOK.md](work/RUNBOOK.md)）：
+
+1. 生成 quarter-resolution 输入 —— `pipeline/prep_freqortho_full100.py`
+2. 打补丁并运行 FreqOrtho-SR one-step 推理（`--process_size 512 --upscale 4`）
+3. TADSR teacher 细化回原生 4K —— 普通案例 t=500，`scene_4k.json` 复杂案例 t=800；teacher 高斯模糊 r=3.0 + ADain 色彩校正
+4. 候选筛选 `utility = 1.10286 × d_nr4 + 0.21747 × d_edge` —— 官方 top-5：**44 / 60 / 97 / 79 / 51**
+5. 重建提交包 —— 仅替换入选 5 张，其余 95 张与 opt7 4.0002 基线字节一致
+
+**环境**（两套独立环境，版本钉死，详见 [work/04_environment/ENVIRONMENT.md](work/04_environment/ENVIRONMENT.md)）：
+
+| | FreqOrtho-SR | TADSR |
+|---|---|---|
+| Python | 3.10 | 3.10 |
+| Torch / torchvision | 2.9.1 / 0.24.1 | 2.0.1 |
+| transformers | 4.37.2 | 4.28.1 |
+| diffusers | 0.25.0 | 0.25.0 |
+| 其他 | xformers 0.0.33.post2 | xformers 0.0.20, peft 0.9.0 |
+
+> 官方结果包 SHA-256：`8e24ea7a06dddeb7ab92322ee48bf4245d05023d9bb6ed629d81e791196d1a35`（与 [work/SOURCE_FILES.md](work/SOURCE_FILES.md) 记录一致，已实测复核）。
 
 ## 可控性如何落到五类挑战
 
@@ -117,10 +151,18 @@ TADSR 的作用不是重新发明内容，而是**把粗恢复结果细化到更
 │   ├── 测试集/                  # case1 … case100（4K 输入）
 │   └── 验证集/                  # 5 组 LQ/GT 对齐数据
 ├── assets/                      # 本文档配图（PPT 内嵌图与结果证据）
-└── 杂/初次.md                    # 赛前分析与作战计划
+├── work/                        # 完整复现套件（源码 / 权重 / 脚本 / 环境官方结果包）
+│   ├── 00_README.md             # 分包索引
+│   ├── RUNBOOK.md               # 4.0003 五步复现手册
+│   ├── SOURCE_FILES.md          # 原始文件位置申明
+│   ├── 01_freqortho_sr/         # FreqOrtho-SR 源码 + 权重
+│   ├── 02_tadsr/                # TADSR 源码 + LoRA 权重
+│   ├── 03_pipeline/             # 推理脚本与 config
+│   ├── 04_environment/          # 环境依赖清单
+│   ├── 05_official_package/     # 官方 4.0003 结果包（100 张）
+│   └── 06_defense/              # 答辩素材
+└── 杂/                           # 赛前笔记与原始压缩包留档（zip 不入库）
 ```
-
-> 注：完整工程包（RUNBOOK、推理脚本、scene_4k.json、全量对比 ledger、官方结果包与 SHA256SUMS）在主工作区维护，后续归档至本仓库。
 
 ## 致谢与声明
 
