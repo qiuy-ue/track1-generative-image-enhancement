@@ -1,6 +1,22 @@
 # 清晰有度，增强可控
 
-**简体中文** | [English](README.en.md)
+<p align="center">
+  <a href="README.md"><img src="https://img.shields.io/badge/切换语言-简体中文-red?style=for-the-badge" alt="简体中文"></a>
+  <a href="README.en.md"><img src="https://img.shields.io/badge/切换语言-English-blue?style=for-the-badge" alt="English"></a>
+</p>
+
+> [!IMPORTANT]
+> **一句话**：基于 **FreqOrtho-SR + TADSR** 的两级生成式增强 —— FreqOrtho-SR 在四分之一分辨率守住像素结构（FreqMoE 频率路由 + OGP 正交梯度投影），TADSR 时间感知一步扩散把细节落回原生 4K，最后用可解释加权规则完成候选筛选。先恢复结构，再补足细节，可解释地收尾。
+>
+> **成绩**：2026 CSIG「Camera学术之星」赛道一 · 初赛官方记录 **4.0003** · 候选 top-5：case **44 / 60 / 97 / 79 / 51** · **全流程单卡 A100 40GB**
+>
+> **怎么跑**：源码、权重、推理脚本与官方结果包均已随仓库分发（[`work/`](work/)），Docker 一键复现：
+>
+> ```bash
+> docker compose build && docker compose run --rm freqortho-sr
+> ```
+>
+> 五步细节见 [work/RUNBOOK.md](work/RUNBOOK.md)，底模获取与镜像说明见 [🐳 Docker 复现](#-docker-复现)。
 
 ![Competition](https://img.shields.io/badge/2026_CSIG_Camera学术之星-赛道一-2563EB)
 ![Stage](https://img.shields.io/badge/阶段-决赛方案-7C3AED)
@@ -10,16 +26,13 @@
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.9_/_2.0-EE4C2C)
 ![Hardware](https://img.shields.io/badge/全流程-单卡_A100_40GB-0891B2)
 
-> [!IMPORTANT]
-> **一句话**：基于 **FreqOrtho-SR + TADSR** 的两级生成式增强 —— FreqOrtho-SR 在四分之一分辨率守住像素结构（FreqMoE 频率路由 + OGP 正交梯度投影），TADSR 时间感知一步扩散把细节落回原生 4K，最后用可解释的加权规则完成候选筛选。**初赛官方记录 4.0003**（100/100 张 4K 结果严格命名封装，附 SHA-256），**全流程单卡 A100 40GB**。
->
-> **看什么**：[方案总览](#方案总览)（两张架构图）· [五类挑战场景结果证据](#可控性如何落到五类挑战) · [端到端工程闭环](#端到端工程闭环)
->
-> **怎么跑**：完整复现套件已随仓库归档于 [`work/`](work/) —— 源码、权重、推理脚本、双环境依赖与官方结果包齐备，五步复现见 [work/RUNBOOK.md](work/RUNBOOK.md)，环境重建见 [work/04_environment/ENVIRONMENT.md](work/04_environment/ENVIRONMENT.md)。仅 TADSR base 与 SD2.1-base 两个大底模不随库分发，下载说明见 [work/00_README.md](work/00_README.md)。
+<p align="center"><img src="assets/demo_lq_vs_result.gif" alt="LQ vs 增强结果对比演示" width="800"></p>
+
+> 演示帧序：case22 / case43 / case51 / case56 / case60 / case97——左为 `data/测试集` 低质量输入，右为 `work/05_official_package` 官方结果包输出。两组文件均随仓库分发，可逐帧复核。
 
 ---
 
-## 成果一览
+## 🏆 成果一览
 
 | 项目 | 结果 |
 |------|------|
@@ -28,7 +41,7 @@
 | FreqOrtho-SR · DRealSR 论文基准 | PSNR **29.08** / LPIPS **0.2799**（两项同时改善） |
 | 硬件门槛 | 单卡 A100 40GB 完成全部推理与封装 |
 
-## 赛题与挑战
+## 📖 赛题与挑战
 
 赛题要求以 **Diffusion 架构**对 4K 低质量图像进行增强，评分对照隐藏 Ground Truth，综合多项有参考与无参考指标加权。真正难的不是放大，而是在放大后仍然保持内容真实。
 
@@ -36,7 +49,7 @@
 
 **五类重点挑战场景：** 小人脸 · 文字 · 密集绿植 · 钟表 · 鸟类
 
-## 方案总览
+## 🧩 方案总览
 
 ```mermaid
 flowchart LR
@@ -66,7 +79,7 @@ TADSR 的作用不是重新发明内容，而是**把粗恢复结果细化到更
 
 ![TADSR 时间感知蒸馏框架](assets/tadsr_overview.png)
 
-## 端到端工程闭环
+## ⚙️ 端到端工程闭环
 
 | 阶段 | 内容 |
 |------|------|
@@ -78,20 +91,32 @@ TADSR 的作用不是重新发明内容，而是**把粗恢复结果细化到更
 
 筛选权重来自全量 100 张的 teacher-vs-候选对比实验（`work/03_pipeline/config/freq_teacher_vs_plus3_full100_1024.json`），是一条**可解释、可复核**的规则，而不是黑盒打分。
 
-## 复现（work/）
+## 📦 复现（work/）
 
-完整复现套件已随仓库归档，目录对应原编号分包：
+### 随仓库分发情况
+
+| 内容 | 状态 | 位置 |
+|------|------|------|
+| FreqOrtho-SR 微调权重 `freqortho_sr.pkl`（57.7MB） | ✅ 已随仓库分发 | `work/01_freqortho_sr/weights/` |
+| TADSR LoRA 权重（`tadsr_imag2006_a15.pkl` 等） | ✅ 已随仓库分发 | `work/02_tadsr/weights/` |
+| 推理 / 比较 / 筛选 / 封装脚本与配置 | ✅ 已随仓库分发 | `work/03_pipeline/` |
+| 测试输入（case1…case100，4K）与验证集 | ✅ 已随仓库分发 | `data/` |
+| 官方 4.0003 结果包（100 张 4K） | ✅ 已随仓库分发 | `work/05_official_package/` |
+| **SD2.1-base / RAM / TADSR base 底模** | ❌ 不随仓库分发 | 见 [🐳 Docker 复现](#-docker-复现) |
+
+### 目录
 
 | 目录 | 内容 |
 |------|------|
-| `work/01_freqortho_sr/` | FreqOrtho-SR 完整源码 + `freqortho_sr.pkl` 权重（57.7MB） |
-| `work/02_tadsr/` | TADSR 源码 + LoRA 权重（`tadsr_imag2006_a15.pkl` 等） |
+| `work/01_freqortho_sr/` | FreqOrtho-SR 完整源码 + `freqortho_sr.pkl` 权重 |
+| `work/02_tadsr/` | TADSR 源码 + LoRA 权重 |
 | `work/03_pipeline/` | 推理 / 比较 / 筛选 / 封装脚本与 config（`scene_4k.json` 等） |
-| `work/04_environment/` | 双环境依赖清单（Conda + pip，含底模下载说明） |
+| `work/04_environment/` | 双环境依赖清单（Conda + pip，含底模获取指引） |
 | `work/05_official_package/` | 官方 4.0003 提交包：`output_dir/case1.jpg … case100.jpg` |
-| `work/06_defense/` | 答辩用素材 |
+| `work/06_defense/` | 答辩素材 |
 
-**五步复现**（细节见 [work/RUNBOOK.md](work/RUNBOOK.md)）：
+<details>
+<summary><b>五步复现（点击展开；细节见 <a href="work/RUNBOOK.md">work/RUNBOOK.md</a>）</b></summary>
 
 1. 生成 quarter-resolution 输入 —— `pipeline/prep_freqortho_full100.py`
 2. 打补丁并运行 FreqOrtho-SR one-step 推理（`--process_size 512 --upscale 4`）
@@ -99,7 +124,10 @@ TADSR 的作用不是重新发明内容，而是**把粗恢复结果细化到更
 4. 候选筛选 `utility = 1.10286 × d_nr4 + 0.21747 × d_edge` —— 官方 top-5：**44 / 60 / 97 / 79 / 51**
 5. 重建提交包 —— 仅替换入选 5 张，其余 95 张与 opt7 4.0002 基线字节一致
 
-**环境**（两套独立环境，版本钉死，详见 [work/04_environment/ENVIRONMENT.md](work/04_environment/ENVIRONMENT.md)）：
+</details>
+
+<details>
+<summary><b>环境钉版（两套独立环境，不可合并——点击展开）</b></summary>
 
 | | FreqOrtho-SR | TADSR |
 |---|---|---|
@@ -109,9 +137,34 @@ TADSR 的作用不是重新发明内容，而是**把粗恢复结果细化到更
 | diffusers | 0.25.0 | 0.25.0 |
 | 其他 | xformers 0.0.33.post2 | xformers 0.0.20, peft 0.9.0 |
 
-> 官方结果包 SHA-256：`8e24ea7a06dddeb7ab92322ee48bf4245d05023d9bb6ed629d81e791196d1a35`（与 [work/SOURCE_FILES.md](work/SOURCE_FILES.md) 记录一致，已实测复核）。
+来源：[work/04_environment/ENVIRONMENT.md](work/04_environment/ENVIRONMENT.md)；conda 环境文件与 pip 清单在同目录。
 
-## 可控性如何落到五类挑战
+</details>
+
+> 官方结果包 SHA-256：`8e24ea7a06dddeb7ab92322ee48bf4245d05023d9bb6ed629d81e791196d1a35`（与 [work/SOURCE_FILES.md](work/SOURCE_FILES.md) 记录一致）。
+
+## 🐳 Docker 复现
+
+两套钉版环境**不可合并**（[ENVIRONMENT.md](work/04_environment/ENVIRONMENT.md) 明确警告 torch/xformers 版本冲突），因此拆为两个镜像；微调权重与推理脚本随镜像内置，**三个底模不随仓库与镜像分发**——按 [work/00_README.md](work/00_README.md) 与各 README 的官方来源获取后放入 `./models-base/`（自动挂载为容器内 `/opt/base-models`）：
+
+| 底模 | 官方来源 | 用途 |
+|------|----------|------|
+| Stable Diffusion 2.1-base | [stabilityai/stable-diffusion-2-1-base](https://huggingface.co/stabilityai/stable-diffusion-2-1-base) | FreqOrtho-SR 底模（`preset/models/SD21`） |
+| RAM `ram_swin_large_14m.pth` | [Recognize Anything](https://huggingface.co/spaces/xinyu1205/recognize-anything) | 自动语义提示 |
+| TADSR base | [zty557/TADSR](https://huggingface.co/zty557/TADSR) | teacher 细化 |
+
+```bash
+# 构建（freqortho-sr 含 cu12.8 运行库约 6–8 GB；tadsr 约 4–5 GB；首次构建需下载依赖）
+docker compose build
+
+# 交互式进入容器，按 work/RUNBOOK.md 五步执行（脚本内路径按 RUNBOOK 说明调整）
+docker compose run --rm freqortho-sr    # 步骤 1–2、4–5：prep / FreqOrtho-SR 推理 / 筛选 / 封装
+docker compose run --rm tadsr           # 步骤 3：TADSR teacher 原生 4K 细化
+```
+
+> ⚠️ **诚实说明**：归档机无 Docker 与 NVIDIA GPU，镜像构建与 GPU 推理**未实测**；Dockerfile 按 `work/04_environment/` 钉版清单编写（freqortho 以 yaml 重建环境为准，与旧版 `requirements-freqortho.txt` 的差异见 [docker/requirements-freqortho.txt](docker/requirements-freqortho.txt) 头注释）。运行需 Docker + NVIDIA Container Toolkit；驱动要求：cu12.8 镜像 ≥ 525.60，cu118 镜像 ≥ 450.80。
+
+## 🎯 可控性如何落到五类挑战
 
 同一套生成式增强流程，针对不同退化类型保留不同的细节边界：
 
@@ -131,7 +184,7 @@ TADSR 的作用不是重新发明内容，而是**把粗恢复结果细化到更
 
 > 文字场景图中「香樟」铭牌笔画、二维码与叶脉纹理、钟面罗马刻度、羽毛边界均保持自然，无重绘或伪影迹象。
 
-## 提交规范达成情况
+## ✅ 提交规范达成情况
 
 - ✅ 仅提交 `output_dir` 内的结果图
 - ✅ `case1.jpg … case100.jpg` 与测试图严格对应
@@ -139,7 +192,7 @@ TADSR 的作用不是重新发明内容，而是**把粗恢复结果细化到更
 - ✅ 外层打包 `.zip` ≤ 10GB
 - ✅ 结果包附带 SHA-256 清单，可复核
 
-## 仓库结构
+## 📂 仓库结构
 
 ```
 .
@@ -147,11 +200,17 @@ TADSR 的作用不是重新发明内容，而是**把粗恢复结果细化到更
 ├── README.en.md                 # English version
 ├── 赛题介绍.md                   # 赛题规则原文整理
 ├── requirements.txt
+├── docker-compose.yml           # Docker 双镜像编排
+├── .dockerignore
+├── docker/                      # Docker 复现
+│   ├── Dockerfile.freqortho_sr  # 结构恢复镜像（torch 2.9.1+cu12.8）
+│   ├── Dockerfile.tadsr         # TADSR teacher 镜像（torch 2.0.1+cu118）
+│   └── requirements-freqortho.txt
 ├── data/
 │   ├── 测试集/                  # case1 … case100（4K 输入）
 │   └── 验证集/                  # 5 组 LQ/GT 对齐数据
-├── assets/                      # 本文档配图（PPT 内嵌图与结果证据）
-├── work/                        # 完整复现套件（源码 / 权重 / 脚本 / 环境官方结果包）
+├── assets/                      # 本文档配图（架构图 / 证据图 / 演示 GIF）
+├── work/                        # 完整复现套件
 │   ├── 00_README.md             # 分包索引
 │   ├── RUNBOOK.md               # 4.0003 五步复现手册
 │   ├── SOURCE_FILES.md          # 原始文件位置申明
@@ -161,10 +220,10 @@ TADSR 的作用不是重新发明内容，而是**把粗恢复结果细化到更
 │   ├── 04_environment/          # 环境依赖清单
 │   ├── 05_official_package/     # 官方 4.0003 结果包（100 张）
 │   └── 06_defense/              # 答辩素材
-└── 杂/                           # 赛前笔记与原始压缩包留档（zip 不入库）
+└── 杂/                           # 原始分包留档（zip 不入库）
 ```
 
-## 致谢与声明
+## 🙏 致谢与声明
 
 - 方案基于 **FreqOrtho-SR**（FreqMoE + 正交梯度投影）与 **TADSR**（时间感知一步扩散蒸馏），引用的第三方模型与预训练权重将在决赛原创性证明材料中显著申明。
 - 比赛数据所有权归主办方，仅用于本赛事，不作商用或学术发表。

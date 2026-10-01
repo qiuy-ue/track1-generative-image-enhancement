@@ -1,0 +1,57 @@
+# 双镜像复现（两套钉版环境不可合并，见 work/04_environment/ENVIRONMENT.md）
+#   freqortho-sr : 结构恢复（FreqOrtho-SR one-step，四分之一分辨率）——步骤 1–2、4–5
+#   tadsr        : 原生 4K 细化（TADSR teacher，t=500 / scene_4k.json 中 t=800）——步骤 3
+#
+# 底模（SD2.1-base / RAM / TADSR base）不随仓库与镜像分发：
+#   按 work/00_README.md 与 work/01_freqortho_sr/README.md 获取后放入 ./models-base/
+#   （自动挂载为容器内 /opt/base-models），执行步骤见 work/RUNBOOK.md。
+#
+# ⚠️ 归档机无 Docker 与 NVIDIA GPU：本文件未实测；需 Docker Desktop/Engine + NVIDIA Container Toolkit。
+services:
+  freqortho-sr:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.freqortho_sr
+    image: track1/freqortho-sr:latest
+    working_dir: /workspace
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    volumes:
+      - ./data:/workspace/data
+      - ./work:/workspace/work
+      - ./results:/workspace/results
+      - ./models-base:/opt/base-models:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    stdin_open: true
+    tty: true
+    command: bash
+
+  tadsr:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.tadsr
+    image: track1/tadsr:latest
+    working_dir: /workspace
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    volumes:
+      - ./data:/workspace/data
+      - ./work:/workspace/work
+      - ./results:/workspace/results
+      - ./models-base:/opt/base-models:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    stdin_open: true
+    tty: true
+    command: bash

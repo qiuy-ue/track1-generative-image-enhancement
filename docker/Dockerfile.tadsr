@@ -1,0 +1,29 @@
+# TADSR teacher 细化环境（时间感知一步扩散，原生 4K，t=500 / scene_4k.json 中 t=800）
+#
+# 钉版来源：work/04_environment/requirements-tadsr.txt
+#   （torch 2.0.1 / transformers 4.28.1 / xformers 0.0.20 / peft 0.9.0 / pyiqa 0.1.10）
+#
+# ⚠️ 归档机无 Docker 与 NVIDIA GPU：本镜像未实测构建与推理；
+#    cu118 轮子对宿主机驱动要求较低（≥ 450.80）。
+FROM python:3.10-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libgl1 libglib2.0-0 git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+
+# torch 2.0.1 必须取 cu118 轮子（PyPI 默认轮子是 cu117，与原始运行环境不符）
+RUN pip install --no-cache-dir torch==2.0.1 --index-url https://download.pytorch.org/whl/cu118
+
+# 其余依赖（torch==2.0.1 已满足，pip 不会重装）
+COPY work/04_environment/requirements-tadsr.txt /tmp/req-tadsr.txt
+RUN pip install --no-cache-dir -r /tmp/req-tadsr.txt
+
+# 源码 + LoRA 权重（tadsr_imag2006_a15.pkl 随镜像内置）
+COPY work/02_tadsr /opt/TADSR
+# 共用推理管线脚本
+COPY work/03_pipeline /opt/pipeline
+
+ENV PYTHONUNBUFFERED=1
+CMD ["bash"]

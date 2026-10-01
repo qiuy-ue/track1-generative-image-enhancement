@@ -1,0 +1,13 @@
+# 控制构建上下文体积（镜像只 COPY work/01、02、03、04）
+# data/ 与 work/05、06 运行时以 -v 挂载，不入上下文
+.git
+.gitignore
+data/
+杂/
+work/05_official_package/
+work/06_defense/
+assets/
+outputs/
+reports/
+*.zip
+*.gif
