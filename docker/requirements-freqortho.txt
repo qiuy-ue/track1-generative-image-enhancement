@@ -1,7 +1,7 @@
 # docker/requirements-freqortho.txt
 # 来源：work/04_environment/environment-freqortho.yaml 的 pip 段（重建环境，ENVIRONMENT.md 标注为准）。
 # 注意：work/04_environment/requirements-freqortho.txt 为旧版钉版（torch 2.0.1），与 yaml（torch 2.9.1+cu12.8）
-#       不一致；本文件以 yaml 为准。与原 yaml 的差异（均附原因）：
+#       不一致；本文件以 yaml 为准。差异两项如下（均附原因）：
 #   - 去掉 tb-nightly==2.21.0a20251023（nightly 钉版会随 PyPI 清理失效；tensorboard==2.20.0 已覆盖）
 #   - 去掉 clip==1.0（PyPI 上该名包并非 OpenAI CLIP；openai-clip==1.0.1 已提供 CLIP）
 

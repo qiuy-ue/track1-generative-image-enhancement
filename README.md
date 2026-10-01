@@ -25,6 +25,7 @@
 ![Python](https://img.shields.io/badge/Python-3.10-3776AB)
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.9_/_2.0-EE4C2C)
 ![Hardware](https://img.shields.io/badge/全流程-单卡_A100_40GB-0891B2)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 <p align="center"><img src="assets/demo_lq_vs_result.gif" alt="LQ vs 增强结果对比演示" width="800"></p>
 
@@ -40,6 +41,37 @@
 | 候选筛选官方记录 top-5 | case **44 · 60 · 97 · 79 · 51** |
 | FreqOrtho-SR · DRealSR 论文基准 | PSNR **29.08** / LPIPS **0.2799**（两项同时改善） |
 | 硬件门槛 | 单卡 A100 40GB 完成全部推理与封装 |
+
+## 📊 性能指标
+
+### 赛事评测
+
+| 指标 | 结果 |
+|------|------|
+| 初赛官方综合得分 | **4.0003**（多指标加权，权重未公开） |
+| 提交完整性 | 100 / 100 张 4K，命名严格对应 |
+| 候选替换策略 | 仅替换入选 5 张，其余 95 张与 opt7 4.0002 基线字节一致 |
+
+### 论文基准（DRealSR）
+
+| 指标 | FreqOrtho-SR |
+|------|--------------|
+| PSNR | **29.08** |
+| LPIPS | **0.2799** |
+
+> 两项同时改善：像素保真（PSNR）与感知质量（LPIPS）在 DRealSR 上同向提升，印证"结构守住 + 语义补足"不互相拖累的设计目标。
+
+### 工程与复现参数
+
+| 项目 | 数值 / 方式 |
+|------|-------------|
+| 硬件 | 单卡 A100 40GB（全流程） |
+| 推理范式 | FreqOrtho-SR one-step + TADSR teacher 一步细化 |
+| 分辨率策略 | `--process_size 512 --upscale 4` 回到原生 4K |
+| 时间步 | 常规 t=500；`scene_4k.json` 复杂场景 t=800 |
+| teacher 后处理 | 高斯模糊 r=3.0 + ADain 色彩校正 |
+| 候选筛选 | `utility = 1.10286 × d_nr4 + 0.21747 × d_edge`（全量 100 张对比拟合） |
+| 结果包完整性 | SHA-256 清单随包分发 |
 
 ## 📖 赛题与挑战
 
@@ -78,6 +110,39 @@ TADSR 的作用不是重新发明内容，而是**把粗恢复结果细化到更
 - 高低时间步适配复杂 4K 场景：**普通案例 t=500，复杂案例（scene_4k.json 标定）t=800**。
 
 ![TADSR 时间感知蒸馏框架](assets/tadsr_overview.png)
+
+## 🧠 核心模块说明
+
+### FreqOrtho-SR（`work/01_freqortho_sr/`）
+
+| 模块 | 位置 | 职责 |
+|------|------|------|
+| FreqMoE（像素级） | `pisasr.py` / `train_pisasr.py` | FFT 降质特征路由到像素级 LoRA 专家 |
+| OGP 正交梯度投影 | 同上 | SVD 提取像素子空间，语义 LoRA 梯度投影到零空间 |
+| 推理入口 | `test_pisasr.py` | one-step 推理（`--process_size 512 --upscale 4`） |
+| 微调权重 | `weights/freqortho_sr.pkl`（57.7MB） | ✅ 随仓库分发 |
+
+### TADSR（`work/02_tadsr/`）
+
+| 模块 | 位置 | 职责 |
+|------|------|------|
+| Time-Aware Encoder + UNet 学生 | `tadsr.py` / `train_tadsr.py` | 时间感知一步扩散学生模型 |
+| LoRA 蒸馏 | `ram/models/ram_lora.py` 等 | 冻结教师约束蒸馏（TAVSD） |
+| 分块推理实现 | `remote_used_sources/tadsr_tilefix.py` | 实际线上使用的 4K 分块推理 |
+| 推理入口 | `test_tadsr.py` | t=500 / 800 |
+| LoRA 权重 | `weights/tadsr_imag2006_a15.pkl`（26.3MB）等 | ✅ 随仓库分发 |
+
+### 管线脚本（`work/03_pipeline/`）
+
+| 脚本 | 职责 |
+|------|------|
+| `prep_freqortho_full100.py` | 生成 quarter-resolution 输入 |
+| `patch_freqortho_prompt.py` / `patch_freqortho_skip.py` | 上游补丁（`--prompt` 参数 / 断点续跑） |
+| `run_teacher_freqortho_full100.py` | 调用 TADSR teacher 全量 100 张细化 |
+| `compare_freq_teacher_1024.py` | 全量 teacher-vs-候选对比实验 |
+| `select_top5_from_compare.py` | utility 加权选 top-5 |
+| `build_freq_teacher_package.py` | 重建提交包（仅替换入选 5 张） |
+| `config/scene_4k.json` | 复杂场景清单（t=800） |
 
 ## ⚙️ 端到端工程闭环
 
@@ -192,12 +257,42 @@ docker compose run --rm tadsr           # 步骤 3：TADSR teacher 原生 4K 细
 - ✅ 外层打包 `.zip` ≤ 10GB
 - ✅ 结果包附带 SHA-256 清单，可复核
 
+## 📚 技术文档
+
+| 文档 | 内容 |
+|------|------|
+| [work/RUNBOOK.md](work/RUNBOOK.md) | 4.0003 五步复现手册（含路径调整说明） |
+| [work/00_README.md](work/00_README.md) | 原始五个分包的内容索引与底模申明 |
+| [work/SOURCE_FILES.md](work/SOURCE_FILES.md) | 全部源文件 / 权重 / 配置的原始位置申明 |
+| [work/04_environment/ENVIRONMENT.md](work/04_environment/ENVIRONMENT.md) | 双环境重建说明与钉版要点 |
+| [work/04_environment/environment-freqortho.yaml](work/04_environment/environment-freqortho.yaml) | FreqOrtho-SR conda 环境（重建环境） |
+| [work/04_environment/download_pyiqa_weights.sh](work/04_environment/download_pyiqa_weights.sh) | 评测权重（pyiqa）下载脚本 |
+| [work/01_freqortho_sr/README.md](work/01_freqortho_sr/README.md) | 上游 FreqOrtho-SR / PiSA-SR README（含底模获取） |
+| [work/02_tadsr/README.md](work/02_tadsr/README.md) | 上游 TADSR README（含 checkpoint 获取） |
+| [docker/](docker/) | Docker 双镜像复现（compose + Dockerfile ×2） |
+
+## 🤝 贡献指南
+
+本仓库当前为**私有**仓库，仅限团队成员协作：
+
+1. **分支与提交**：从 `main` 拉功能分支，PR 合入；commit message 用简体中文，格式 `模块: 变更摘要`
+2. **复现验证**：凡改动涉及 `work/03_pipeline/` 脚本或环境钉版，须按 [work/RUNBOOK.md](work/RUNBOOK.md) 重跑对应步骤，并核对结果包 SHA-256 不变（或给出新包校验值）
+3. **原创性申明**：引入任何第三方代码 / 模型 / 数据，必须在 [work/SOURCE_FILES.md](work/SOURCE_FILES.md) 登记来源（决赛原创性证明的硬性要求）
+4. **问题反馈**：Issue 附复现命令、环境信息（按 ENVIRONMENT.md 钉版）与相关 case 编号
+
+## 📄 许可证
+
+本项目**代码与文档**采用 [MIT License](LICENSE) 开源协议。
+
+> 范围说明：MIT 仅覆盖仓库中的代码与文档（`docker/`、`work/01`–`04` 的源码与脚本等）；赛题图像（`data/`）与官方结果包（`work/05_official_package/`）所有权归赛事主办方，不适用本许可证，仅限赛事用途，不得商用或公开发表。
+
 ## 📂 仓库结构
 
 ```
 .
 ├── README.md                    # 本文档（简体中文）
 ├── README.en.md                 # English version
+├── LICENSE                      # MIT（仅覆盖代码与文档，范围见许可证章节）
 ├── 赛题介绍.md                   # 赛题规则原文整理
 ├── requirements.txt
 ├── docker-compose.yml           # Docker 双镜像编排
@@ -227,4 +322,5 @@ docker compose run --rm tadsr           # 步骤 3：TADSR teacher 原生 4K 细
 
 - 方案基于 **FreqOrtho-SR**（FreqMoE + 正交梯度投影）与 **TADSR**（时间感知一步扩散蒸馏），引用的第三方模型与预训练权重将在决赛原创性证明材料中显著申明。
 - 比赛数据所有权归主办方，仅用于本赛事，不作商用或学术发表。
+- 代码与文档采用 [MIT License](LICENSE)；赛题数据与官方结果包不适用（见[许可证](#-许可证)）。
 - 本仓库当前为**私有**仓库。
