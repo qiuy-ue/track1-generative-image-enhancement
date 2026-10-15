@@ -10,7 +10,7 @@
 >
 > **Results**: 2026 CSIG "Camera Academic Star" Track 1 · Preliminary official record **4.0003** · top-5 candidates: case **44 / 60 / 97 / 79 / 51** · **end-to-end on a single A100 40GB**
 >
-> **How to run**: source, weights, inference scripts and the official result package all ship with this repository ([`work/`](work/)). One-command Docker reproduction:
+> **How to run**: the public release ships complete source, inference scripts and configs ([`work/`](work/)); model weights, defense materials and competition images are not included. Docker reproduction:
 >
 > ```bash
 > docker compose build && docker compose run --rm freqortho-sr
@@ -26,9 +26,7 @@
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.9_/_2.0-EE4C2C)
 ![Hardware](https://img.shields.io/badge/End_to_end-Single_A100_40GB-0891B2)
 
-<p align="center"><img src="assets/demo_lq_vs_result.gif" alt="LQ vs enhanced result demo" width="800"></p>
-
-> Demo sequence: case22 / case43 / case51 / case56 / case60 / case97 — left: low-quality input from `data/测试集`, right: official submitted result from `work/05_official_package`. Both sides ship with the repository and can be verified frame by frame.
+> Note: low-quality inputs and official outputs (originally `data/测试集`, `work/05_official_package/`) are competition-restricted and are not part of the public release.
 
 ---
 
@@ -97,11 +95,11 @@ The selection weights come from a full-100 teacher-vs-candidate comparison exper
 
 | Item | Status | Location |
 |------|--------|----------|
-| FreqOrtho-SR fine-tuned weights `freqortho_sr.pkl` (57.7MB) | ✅ included | `work/01_freqortho_sr/weights/` |
-| TADSR LoRA weights (`tadsr_imag2006_a15.pkl` etc.) | ✅ included | `work/02_tadsr/weights/` |
+| FreqOrtho-SR fine-tuned weights `freqortho_sr.pkl` | ❌ not included | private archive |
+| TADSR LoRA weights (`tadsr_imag2006_a15.pkl` etc.) | ❌ not included | private archive |
 | Inference / compare / select / package scripts & config | ✅ included | `work/03_pipeline/` |
-| Test inputs (case1…case100, 4K) and validation set | ✅ included | `data/` |
-| Official 4.0003 result package (100 4K images) | ✅ included | `work/05_official_package/` |
+| Test inputs (case1…case100, 4K) and validation set | ❌ not included (competition images) | original `data/` |
+| Official 4.0003 result package (100 4K images) | ❌ not included | original `work/05_official_package/` |
 | **SD2.1-base / RAM / TADSR base models** | ❌ not included | see [🐳 Docker Reproduction](#docker-reproduction) |
 
 ### Directories
@@ -112,8 +110,8 @@ The selection weights come from a full-100 teacher-vs-candidate comparison exper
 | `work/02_tadsr/` | TADSR source + LoRA weights |
 | `work/03_pipeline/` | Inference / compare / select / package scripts + config (`scene_4k.json` etc.) |
 | `work/04_environment/` | Dual-environment dependency manifests (Conda + pip, incl. base-model notes) |
-| `work/05_official_package/` | Official 4.0003 submission package: `output_dir/case1.jpg … case100.jpg` |
-| `work/06_defense/` | Defense materials |
+| `work/05_official_package/` | Official 4.0003 submission package (100 images) · not in the public release |
+| `work/06_defense/` | Defense materials · not in the public release |
 
 <details>
 <summary><b>Five-step reproduction (click to expand; details in <a href="work/RUNBOOK.md">work/RUNBOOK.md</a>)</b></summary>
@@ -145,7 +143,7 @@ Source: [work/04_environment/ENVIRONMENT.md](work/04_environment/ENVIRONMENT.md)
 
 ## 🐳 Docker Reproduction
 
-The two pinned environments **must not be merged** ([ENVIRONMENT.md](work/04_environment/ENVIRONMENT.md) explicitly warns about torch/xformers conflicts), so they are packaged as two images; fine-tuned weights and inference scripts are baked into the images, while the **three base models ship with neither the repository nor the images** — obtain them per [work/00_README.md](work/00_README.md) and each README's official source, then place them in `./models-base/` (auto-mounted as `/opt/base-models` inside the containers):
+The two pinned environments **must not be merged** ([ENVIRONMENT.md](work/04_environment/ENVIRONMENT.md) explicitly warns about torch/xformers conflicts), so they are packaged as two images; inference scripts are baked into the images, while **the fine-tuned weights and the three base models ship with neither the public release nor the images** — prepare weights from the private archive and obtain the base models per [work/00_README.md](work/00_README.md) and each README's official source, then place the base models in `./models-base/` (auto-mounted as `/opt/base-models` inside the containers):
 
 | Base model | Official source | Purpose |
 |------------|-----------------|---------|
@@ -177,13 +175,7 @@ The same generative pipeline keeps different detail boundaries for different deg
 | Clocks | Preserve dial markers, hands, and circular structure |
 | Birds | Recover feather boundaries without fabricating plumage |
 
-Result-image evidence from the official package (case attribution verified against the test set by content matching):
-
-| Text (case22 crop) | Dense vegetation (case56) | Clock (case43) | Bird (case60) |
-|:---:|:---:|:---:|:---:|
-| ![](assets/evidence_case22_text.jpg) | ![](assets/evidence_case56_plants.jpg) | ![](assets/evidence_case43_clock.jpg) | ![](assets/evidence_case60_bird.jpg) |
-
-> In the text image, the "香樟" sign strokes, QR code, leaf veins, the clock's Roman markers, and the feather boundaries all stay natural — no repainting or artifact traces.
+> Result-image evidence (text case22, dense vegetation case56, clock case43, bird case60) comes from the official package, which is competition-restricted and not part of the public release.
 
 ## ✅ Submission Compliance
 
@@ -207,10 +199,7 @@ Result-image evidence from the official package (case attribution verified again
 │   ├── Dockerfile.freqortho_sr  # structure-restoration image (torch 2.9.1+cu12.8)
 │   ├── Dockerfile.tadsr         # TADSR teacher image (torch 2.0.1+cu118)
 │   └── requirements-freqortho.txt
-├── data/
-│   ├── 测试集/                  # case1 … case100 (4K inputs)
-│   └── 验证集/                  # 5 aligned LQ/GT pairs
-├── assets/                      # figures for this document (architecture / evidence / demo GIF)
+├── assets/                      # figures for this document (architecture diagrams)
 ├── work/                        # full reproduction kit
 │   ├── 00_README.md             # bundle index
 │   ├── RUNBOOK.md               # five-step 4.0003 reproduction runbook
@@ -218,14 +207,14 @@ Result-image evidence from the official package (case attribution verified again
 │   ├── 01_freqortho_sr/         # FreqOrtho-SR source + weights
 │   ├── 02_tadsr/                # TADSR source + LoRA weights
 │   ├── 03_pipeline/             # inference scripts & config
-│   ├── 04_environment/          # environment manifests
-│   ├── 05_official_package/     # official 4.0003 result package (100 images)
-│   └── 06_defense/              # defense materials
+│   └── 04_environment/          # environment manifests
 └── 杂/                           # original zip bundles archive (zips not tracked)
 ```
+
+> The public release does not include model weights, defense materials, competition images (original `data/`), or the official result package (`work/05_official_package/`).
 
 ## 🙏 Acknowledgements & Declaration
 
 - The solution builds on **FreqOrtho-SR** (FreqMoE + orthogonal gradient projection) and **TADSR** (time-aware one-step diffusion distillation); third-party models and pretrained weights will be explicitly declared in the finals originality materials.
 - Competition data is owned by the organizers, used here solely for this competition — no commercial or academic publication use.
-- This repository is currently **private**.
+- This is the public code-and-docs release of the CSIG Track 1 project; it does not include model weights, defense materials, or competition images and the official result package.

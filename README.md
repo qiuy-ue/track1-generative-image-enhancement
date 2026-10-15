@@ -10,7 +10,7 @@
 >
 > **成绩**：2026 CSIG「Camera学术之星」赛道一 · 初赛官方记录 **4.0003**,排名**15/513** · 候选 top-5：case **44 / 60 / 97 / 79 / 51** · **全流程单卡 A100 40GB**
 >
-> **怎么跑**：源码、权重、推理脚本与官方结果包均已随仓库分发（[`work/`](work/)），Docker 一键复现：
+> **怎么跑**：公开版本包含完整源码、推理脚本与配置（[`work/`](work/)）；模型权重、答辩材料与赛题图像未随公开版本分发（见[📄 许可证](#-许可证)）。Docker 复现流程：
 >
 > ```bash
 > docker compose build && docker compose run --rm freqortho-sr
@@ -27,9 +27,7 @@
 ![Hardware](https://img.shields.io/badge/全流程-单卡_A100_40GB-0891B2)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-<p align="center"><img src="assets/demo_lq_vs_result.gif" alt="LQ vs 增强结果对比演示" width="800"></p>
-
-> 演示帧序：case22 / case43 / case51 / case56 / case60 / case97——左为 `data/测试集` 低质量输入，右为 `work/05_official_package` 官方结果包输出。两组文件均随仓库分发，可逐帧复核。
+> 说明：低质量输入与官方结果输出（原仓库 `data/测试集`、`work/05_official_package/`）依赛事规则仅限赛事使用，未随公开版本分发。
 
 ---
 
@@ -120,7 +118,7 @@ TADSR 的作用不是重新发明内容，而是**把粗恢复结果细化到更
 | FreqMoE（像素级） | `pisasr.py` / `train_pisasr.py` | FFT 降质特征路由到像素级 LoRA 专家 |
 | OGP 正交梯度投影 | 同上 | SVD 提取像素子空间，语义 LoRA 梯度投影到零空间 |
 | 推理入口 | `test_pisasr.py` | one-step 推理（`--process_size 512 --upscale 4`） |
-| 微调权重 | `weights/freqortho_sr.pkl`（57.7MB） | ✅ 随仓库分发 |
+| 微调权重 | `weights/freqortho_sr.pkl` | ❌ 未随公开版本分发（私有归档保留） |
 
 ### TADSR（`work/02_tadsr/`）
 
@@ -130,7 +128,7 @@ TADSR 的作用不是重新发明内容，而是**把粗恢复结果细化到更
 | LoRA 蒸馏 | `ram/models/ram_lora.py` 等 | 冻结教师约束蒸馏（TAVSD） |
 | 分块推理实现 | `remote_used_sources/tadsr_tilefix.py` | 实际线上使用的 4K 分块推理 |
 | 推理入口 | `test_tadsr.py` | t=500 / 800 |
-| LoRA 权重 | `weights/tadsr_imag2006_a15.pkl`（26.3MB）等 | ✅ 随仓库分发 |
+| LoRA 权重 | `weights/tadsr_imag2006_a15.pkl` 等 | ❌ 未随公开版本分发（私有归档保留） |
 
 ### 管线脚本（`work/03_pipeline/`）
 
@@ -162,11 +160,11 @@ TADSR 的作用不是重新发明内容，而是**把粗恢复结果细化到更
 
 | 内容 | 状态 | 位置 |
 |------|------|------|
-| FreqOrtho-SR 微调权重 `freqortho_sr.pkl`（57.7MB） | ✅ 已随仓库分发 | `work/01_freqortho_sr/weights/` |
-| TADSR LoRA 权重（`tadsr_imag2006_a15.pkl` 等） | ✅ 已随仓库分发 | `work/02_tadsr/weights/` |
+| FreqOrtho-SR 微调权重 `freqortho_sr.pkl` | ❌ 未随公开版本分发 | 私有归档 |
+| TADSR LoRA 权重（`tadsr_imag2006_a15.pkl` 等） | ❌ 未随公开版本分发 | 私有归档 |
 | 推理 / 比较 / 筛选 / 封装脚本与配置 | ✅ 已随仓库分发 | `work/03_pipeline/` |
-| 测试输入（case1…case100，4K）与验证集 | ✅ 已随仓库分发 | `data/` |
-| 官方 4.0003 结果包（100 张 4K） | ✅ 已随仓库分发 | `work/05_official_package/` |
+| 测试输入（case1…case100，4K）与验证集 | ❌ 未随公开版本分发（赛事图像） | 原仓库 `data/` |
+| 官方 4.0003 结果包（100 张 4K） | ❌ 未随公开版本分发 | 原仓库 `work/05_official_package/` |
 | **SD2.1-base / RAM / TADSR base 底模** | ❌ 不随仓库分发 | 见 [🐳 Docker 复现](#-docker-复现) |
 
 ### 目录
@@ -177,8 +175,8 @@ TADSR 的作用不是重新发明内容，而是**把粗恢复结果细化到更
 | `work/02_tadsr/` | TADSR 源码 + LoRA 权重 |
 | `work/03_pipeline/` | 推理 / 比较 / 筛选 / 封装脚本与 config（`scene_4k.json` 等） |
 | `work/04_environment/` | 双环境依赖清单（Conda + pip，含底模获取指引） |
-| `work/05_official_package/` | 官方 4.0003 提交包：`output_dir/case1.jpg … case100.jpg` |
-| `work/06_defense/` | 答辩素材 |
+| `work/05_official_package/` | 官方 4.0003 提交包（100 张）· 未随公开版本分发 |
+| `work/06_defense/` | 答辩素材 · 未随公开版本分发 |
 
 <details>
 <summary><b>五步复现（点击展开；细节见 <a href="work/RUNBOOK.md">work/RUNBOOK.md</a>）</b></summary>
@@ -210,7 +208,7 @@ TADSR 的作用不是重新发明内容，而是**把粗恢复结果细化到更
 
 ## 🐳 Docker 复现
 
-两套钉版环境**不可合并**（[ENVIRONMENT.md](work/04_environment/ENVIRONMENT.md) 明确警告 torch/xformers 版本冲突），因此拆为两个镜像；微调权重与推理脚本随镜像内置，**三个底模不随仓库与镜像分发**——按 [work/00_README.md](work/00_README.md) 与各 README 的官方来源获取后放入 `./models-base/`（自动挂载为容器内 `/opt/base-models`）：
+两套钉版环境**不可合并**（[ENVIRONMENT.md](work/04_environment/ENVIRONMENT.md) 明确警告 torch/xformers 版本冲突），因此拆为两个镜像；推理脚本随镜像内置，**模型权重与三个底模均不随公开版本与镜像分发**——权重需从私有归档自备，三个底模按 [work/00_README.md](work/00_README.md) 与各 README 的官方来源获取后放入 `./models-base/`（自动挂载为容器内 `/opt/base-models`）：
 
 | 底模 | 官方来源 | 用途 |
 |------|----------|------|
@@ -241,13 +239,7 @@ docker compose run --rm tadsr           # 步骤 3：TADSR teacher 原生 4K 细
 | 钟表 | 保持刻度、指针与圆形结构 |
 | 鸟类 | 恢复羽毛边界，不制造伪羽纹 |
 
-官方结果包中的结果图证据（按内容比对测试集确认归属）：
-
-| 文字（case22 局部） | 密集绿植（case56） | 钟表（case43） | 鸟类（case60） |
-|:---:|:---:|:---:|:---:|
-| ![](assets/evidence_case22_text.jpg) | ![](assets/evidence_case56_plants.jpg) | ![](assets/evidence_case43_clock.jpg) | ![](assets/evidence_case60_bird.jpg) |
-
-> 文字场景图中「香樟」铭牌笔画、二维码与叶脉纹理、钟面罗马刻度、羽毛边界均保持自然，无重绘或伪影迹象。
+> 结果图证据（文字 case22、密集绿植 case56、钟表 case43、鸟类 case60）取材于官方结果包，依赛事规则未随公开版本分发；完整比对素材保留在私有归档中。
 
 ## ✅ 提交规范达成情况
 
@@ -273,7 +265,7 @@ docker compose run --rm tadsr           # 步骤 3：TADSR teacher 原生 4K 细
 
 ## 🤝 贡献指南
 
-本仓库当前为**私有**仓库，仅限团队成员协作：
+本仓库已公开发布（公开版本不含模型权重、答辩材料与赛题图像）：
 
 1. **分支与提交**：从 `main` 拉功能分支，PR 合入；commit message 用简体中文，格式 `模块: 变更摘要`
 2. **复现验证**：凡改动涉及 `work/03_pipeline/` 脚本或环境钉版，须按 [work/RUNBOOK.md](work/RUNBOOK.md) 重跑对应步骤，并核对结果包 SHA-256 不变（或给出新包校验值）
@@ -284,7 +276,7 @@ docker compose run --rm tadsr           # 步骤 3：TADSR teacher 原生 4K 细
 
 本项目**代码与文档**采用 [MIT License](LICENSE) 开源协议。
 
-> 范围说明：MIT 仅覆盖仓库中的代码与文档（`docker/`、`work/01`–`04` 的源码与脚本等）；赛题图像（`data/`）与官方结果包（`work/05_official_package/`）所有权归赛事主办方，不适用本许可证，仅限赛事用途，不得商用或公开发表。
+> 范围说明：MIT 仅覆盖仓库中的代码与文档（`docker/`、`work/01`–`04` 的源码与脚本等）。赛题图像与官方结果包（原仓库 `data/`、`work/05_official_package/`）所有权归赛事主办方，仅限赛事用途、不得商用或公开发表——公开版本同样不包含这些内容。
 
 ## 📂 仓库结构
 
@@ -301,10 +293,7 @@ docker compose run --rm tadsr           # 步骤 3：TADSR teacher 原生 4K 细
 │   ├── Dockerfile.freqortho_sr  # 结构恢复镜像（torch 2.9.1+cu12.8）
 │   ├── Dockerfile.tadsr         # TADSR teacher 镜像（torch 2.0.1+cu118）
 │   └── requirements-freqortho.txt
-├── data/
-│   ├── 测试集/                  # case1 … case100（4K 输入）
-│   └── 验证集/                  # 5 组 LQ/GT 对齐数据
-├── assets/                      # 本文档配图（架构图 / 证据图 / 演示 GIF）
+├── assets/                      # 本文档配图（架构图）
 ├── work/                        # 完整复现套件
 │   ├── 00_README.md             # 分包索引
 │   ├── RUNBOOK.md               # 4.0003 五步复现手册
@@ -312,15 +301,15 @@ docker compose run --rm tadsr           # 步骤 3：TADSR teacher 原生 4K 细
 │   ├── 01_freqortho_sr/         # FreqOrtho-SR 源码 + 权重
 │   ├── 02_tadsr/                # TADSR 源码 + LoRA 权重
 │   ├── 03_pipeline/             # 推理脚本与 config
-│   ├── 04_environment/          # 环境依赖清单
-│   ├── 05_official_package/     # 官方 4.0003 结果包（100 张）
-│   └── 06_defense/              # 答辩素材
+│   └── 04_environment/          # 环境依赖清单
 └── 杂/                           # 原始分包留档（zip 不入库）
 ```
+
+> 公开版本不包含：模型权重、答辩材料、赛题图像（原仓库 `data/`）与官方结果包（`work/05_official_package/`）。
 
 ## 🙏 致谢与声明
 
 - 方案基于 **FreqOrtho-SR**（FreqMoE + 正交梯度投影）与 **TADSR**（时间感知一步扩散蒸馏），引用的第三方模型与预训练权重将在决赛原创性证明材料中显著申明。
 - 比赛数据所有权归主办方，仅用于本赛事，不作商用或学术发表。
 - 代码与文档采用 [MIT License](LICENSE)；赛题数据与官方结果包不适用（见[许可证](#-许可证)）。
-- 本仓库当前为**私有**仓库。
+- 本仓库为 CSIG 赛道一项目的公开代码与文档版本，不含模型权重、答辩材料与赛题图像/官方结果包。
